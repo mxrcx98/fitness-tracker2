@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fitness Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f3;
+      --bg-tertiary: #ededea;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b6b67;
+      --border: rgba(0,0,0,0.12);
+      --border-strong: rgba(0,0,0,0.25);
+      --accent: #1D9E75;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1c1c1a;
+        --bg-secondary: #252523;
+        --bg-tertiary: #2e2e2b;
+        --text-primary: #f0efe8;
+        --text-secondary: #9a9991;
+        --border: rgba(255,255,255,0.1);
+        --border-strong: rgba(255,255,255,0.22);
+      }
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; }
+    .app { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+    h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .nav { display: flex; gap: 4px; background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 4px; margin-bottom: 1.5rem; border: 0.5px solid var(--border); }
+    .nav button { flex: 1; padding: 9px; border: none; background: transparent; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-secondary); transition: all .2s; font-family: 'DM Sans', sans-serif; }
+    .nav button.active { background: var(--bg-primary); color: var(--text-primary); border: 0.5px solid var(--border); }
+    .section { display: none; } .section.active { display: block; }
+    .card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+    .card-title { font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: .06em; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: .75rem; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .metric { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1rem; }
+    .metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-value { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; }
+    .metric-unit { font-size: 13px; color: var(--text-secondary); font-weight: 400; }
+    label { font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; padding: 8px 10px; border: 0.5px solid var(--border-strong);
+      border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary);
+      font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    .form-group { margin-bottom: 12px; }
+    .btn { padding: 9px 18px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif; }
+    .btn:hover { background: var(--bg-tertiary); }
+    .btn-primary { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+    .btn-primary:hover { opacity: .85; }
+    .btn-sm { padding: 5px 11px; font-size: 12px; }
+    .btn-danger { border-color: #A32D2D; color: #A32D2D; background: transparent; }
+    .result-box { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem; border-left: 3px solid var(--accent); }
+    .result-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 14px; }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .val { font-weight: 500; font-family: 'DM Mono', monospace; }
+    .highlight-val { font-size: 30px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; color: var(--text-secondary); font-weight: 500; padding: 8px 4px; border-bottom: 0.5px solid var(--border); }
+    td { padding: 8px 4px; border-bottom: 0.5px solid var(--border); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .empty { text-align: center; padding: 2.5rem; color: var(--text-secondary); font-size: 14px; }
+    .exercise-entry { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 8px; border: 0.5px solid var(--border); }
+    .ex-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .sets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+    .set-pill { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 4px 8px; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text-secondary); }
+    .week-block { margin-bottom: 8px; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .week-block-header { padding: .875rem 1rem; background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .week-block-header:hover { background: var(--bg-secondary); }
+    .week-block-body { padding: 1rem; background: var(--bg-secondary); display: none; }
+    .week-block-body.open { display: block; }
+    @media (max-width: 500px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      .highlight-val { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>Fitness Tracker</h1>
+  <div class="subtitle">Suivi poids · Calories · Entraînements</div>
+
+  <div class="nav">
+    <button class="active" onclick="switchTab('poids', this)">Poids</button>
+    <button onclick="switchTab('calories', this)">Calories</button>
+    <button onclick="switchTab('entrainements', this)">Entraînements</button>
+  </div>
+
+  <!-- POIDS -->
+  <div id="tab-poids" class="section active">
+    <div class="card">
+      <div class="card-title">Ajouter une pesée</div>
+      <div class="grid2">
+        <div class="form-group"><label>Date</label><input type="date" id="w-date"></div>
+        <div class="form-group"><label>Poids (kg)</label><input type="number" id="w-kg" step="0.1" placeholder="140.5"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addWeight()">Ajouter</button>
+    </div>
+
+    <div class="grid3" id="weight-stats" style="display:none">
+      <div class="metric"><div class="metric-label">Actuel</div><div class="metric-value" id="ws-current">—</div></div>
+      <div class="metric"><div class="metric-label">Départ</div><div class="metric-value" id="ws-start">—</div></div>
+      <div class="metric"><div class="metric-label">Perdu</div><div class="metric-value" id="ws-lost" style="color:#1D9E75">—</div></div>
+    </div>
+
+    <div class="card" id="weight-chart-card" style="display:none">
+      <div class="card-title">Évolution du poids</div>
+      <div style="position:relative;height:240px"><canvas id="weightChart" role="img" aria-label="Courbe d'évolution du poids">Courbe de suivi du poids</canvas></div>
+    </div>
+
+    <div class="card" id="weight-log-card" style="display:none">
+      <div class="card-title">Historique</div>
+      <table>
+        <thead><tr><th>Date</th><th>Poids</th><th>Variation</th><th></th></tr></thead>
+        <tbody id="weight-log"></tbody>
+      </table>
+    </div>
+    <div id="weight-empty" class="empty">Aucune pesée enregistrée. Ajoute ta première pesée ci-dessus.</div>
+  </div>
+
+  <!-- CALORIES -->
+  <div id="tab-calories" class="section">
+    <div class="card">
+      <div class="card-title">Profil</div>
+      <div class="grid2">
+        <div class="form-group"><label>Sexe</label>
+          <select id="c-sex"><option value="m">Homme</option><option value="f">Femme</option></select></div>
+        <div class="form-group"><label>Âge (ans)</label><input type="number" id="c-age" value="23"></div>
+        <div class="form-group"><label>Poids (kg)</label><input type="number" id="c-weight" value="140" step="0.1"></div>
+        <div class="form-group"><label>Taille (cm)</label><input type="number" id="c-height" value="183"></div>
+      </div>
+      <div class="form-group"><label>Niveau d'activité</label>
+        <select id="c-activity">
+          <option value="1.2">Sédentaire</option>
+          <option value="1.375">Légèrement actif (1-3j/semaine)</option>
+          <option value="1.55" selected>Modérément actif (3-5j/semaine)</option>
+          <option value="1.725">Très actif (6-7j/semaine)</option>
+          <option value="1.9">Extrêmement actif</option>
+        </select>
+      </div>
+      <div class="grid2">
+        <div class="form-group"><label>Pas/jour</label><input type="number" id="c-steps" value="10000"></div>
+        <div class="form-group"><label>Objectif</label>
+          <select id="c-goal">
+            <option value="250">Doucement (−0,25 kg/sem)</option>
+            <option value="500">Modérément (−0,5 kg/sem)</option>
+            <option value="750">Rapidement (−0,75 kg/sem)</option>
+            <option value="1000" selected>Agressif (−1 kg/sem)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="calcCalories()">Calculer</button>
+    </div>
+    <div id="cal-result" style="display:none">
+      <div class="result-box">
+        <div style="margin-bottom:1rem">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Objectif calorique journalier</div>
+          <span class="highlight-val" id="cr-target">—</span>
+          <span style="font-size:14px;color:var(--text-secondary)"> kcal/jour</span>
+        </div>
+        <div class="result-row"><span>Métabolisme de base (MB)</span><span class="val" id="cr-bmr">—</span></div>
+        <div class="result-row"><span>Dépense totale (DET)</span><span class="val" id="cr-tdee">—</span></div>
+        <div class="result-row"><span>Bonus activité (pas)</span><span class="val" id="cr-steps-bonus">—</span></div>
+        <div class="result-row"><span>Déficit calorique</span><span class="val" id="cr-deficit">—</span></div>
+        <div class="result-row"><span>Protéines recommandées</span><span class="val" id="cr-protein">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENTRAINEMENTS -->
+  <div id="tab-entrainements" class="section">
+    <div class="card">
+      <div class="card-title">Nouvelle séance</div>
+      <div class="grid2">
+        <div class="form-group"><label>Date</label><input type="date" id="tr-date"></div>
+        <div class="form-group"><label>Type</label>
+          <select id="tr-type">
+            <option>Push</option><option>Pull</option><option>Hyrox</option>
+            <option>Padel</option><option>Cardio</option><option>Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Notes / Ressenti</label>
+        <input type="text" id="tr-notes" placeholder="Bonne séance, +5 kg au développé couché...">
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:500">Exercices</div>
+          <button class="btn btn-sm" onclick="addExerciseRow()">+ Exercice</button>
+        </div>
+        <div id="exercises-list"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSession()">Enregistrer la séance</button>
+    </div>
+    <div id="session-log"></div>
+    <div id="session-empty" class="empty">Aucune séance enregistrée. Ajoute ta première séance ci-dessus.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  let weightData = JSON.parse(localStorage.getItem('ft_weight') || '[]');
+  let sessionData = JSON.parse(localStorage.getItem('ft_sessions') || '[]');
+  let weightChart = null;
+  let exCount = 0;
+
+  function save() {
+    localStorage.setItem('ft_weight', JSON.stringify(weightData));
+    localStorage.setItem('ft_sessions', JSON.stringify(sessionData));
+  }
+
+  function switchTab(t, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + t).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function formatDate(s) {
+    const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`;
+  }
+
+  function addWeight() {
+    const date = document.getElementById('w-date').value;
+    const kg = parseFloat(document.getElementById('w-kg').value);
+    if (!date || isNaN(kg)) return;
+    weightData.push({ date, kg });
+    weightData.sort((a, b) => a.date.localeCompare(b.date));
+    save(); renderWeightLog();
+    document.getElementById('w-kg').value = '';
+  }
+
+  function deleteWeight(i) {
+    weightData.splice(i, 1); save(); renderWeightLog();
+  }
+
+  function renderWeightLog() {
+    const log = document.getElementById('weight-log');
+    const empty = document.getElementById('weight-empty');
+    const statsDiv = document.getElementById('weight-stats');
+    const chartCard = document.getElementById('weight-chart-card');
+    const logCard = document.getElementById('weight-log-card');
+    if (!weightData.length) {
+      empty.style.display = 'block'; statsDiv.style.display = 'none';
+      chartCard.style.display = 'none'; logCard.style.display = 'none'; return;
+    }
+    empty.style.display = 'none'; statsDiv.style.display = 'grid';
+    chartCard.style.display = 'block'; logCard.style.display = 'block';
+    const cur = weightData[weightData.length - 1].kg;
+    const start = weightData[0].kg;
+    const lost = start - cur;
+    document.getElementById('ws-current').innerHTML = cur.toFixed(1) + '<span class="metric-unit"> kg</span>';
+    document.getElementById('ws-start').innerHTML = start.toFixed(1) + '<span class="metric-unit"> kg</span>';
+    document.getElementById('ws-lost').innerHTML = (lost > 0 ? '-' : '') + Math.abs(lost).toFixed(1) + '<span class="metric-unit"> kg</span>';
+    log.innerHTML = weightData.slice().reverse().map((w, ri) => {
+      const i = weightData.length - 1 - ri;
+      const prev = i > 0 ? weightData[i - 1].kg : null;
+      const diff = prev !== null ? w.kg - prev : null;
+      let badge = '';
+      if (diff !== null) {
+        if (diff < 0) badge = `<span class="badge badge-green">▼ ${Math.abs(diff).toFixed(1)} kg</span>`;
+        else if (diff > 0) badge = `<span class="badge badge-red">▲ ${diff.toFixed(1)} kg</span>`;
+        else badge = `<span class="badge">= stable</span>`;
+      }
+      return `<tr><td>${formatDate(w.date)}</td><td style="font-family:'DM Mono',monospace;font-weight:500">${w.kg.toFixed(1)} kg</td><td>${badge}</td><td><button class="btn btn-sm btn-danger" onclick="deleteWeight(${i})">×</button></td></tr>`;
+    }).join('');
+    renderWeightChart();
+  }
+
+  function renderWeightChart() {
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    if (weightChart) weightChart.destroy();
+    const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+    const tickColor = isDark ? '#888' : '#666';
+    weightChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: weightData.map(w => formatDate(w.date)),
+        datasets: [{
+          label: 'Poids (kg)', data: weightData.map(w => w.kg),
+          borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,.1)',
+          pointBackgroundColor: '#1D9E75', pointRadius: 4, pointHoverRadius: 6,
+          tension: .3, fill: true, borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toFixed(1)} kg` } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 8 } },
+          y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, callback: v => v.toFixed(1) + ' kg' } }
+        }
+      }
+    });
+  }
+
+  function calcCalories() {
+    const sex = document.getElementById('c-sex').value;
+    const age = parseFloat(document.getElementById('c-age').value);
+    const w = parseFloat(document.getElementById('c-weight').value);
+    const h = parseFloat(document.getElementById('c-height').value);
+    const act = parseFloat(document.getElementById('c-activity').value);
+    const steps = parseFloat(document.getElementById('c-steps').value) || 0;
+    const deficit = parseFloat(document.getElementById('c-goal').value);
+    if ([age, w, h, act].some(isNaN)) return;
+    let bmr = sex === 'm' ? 10 * w + 6.25 * h - 5 * age + 5 : 10 * w + 6.25 * h - 5 * age - 161;
+    const tdee = Math.round(bmr * act);
+    const stepsBonus = Math.round((steps / 10000) * 300);
+    const total = tdee + stepsBonus;
+    const target = total - deficit;
+    const protein = Math.round(w * 2.1);
+    document.getElementById('cr-bmr').textContent = Math.round(bmr) + ' kcal';
+    document.getElementById('cr-tdee').textContent = total + ' kcal';
+    document.getElementById('cr-steps-bonus').textContent = '+' + stepsBonus + ' kcal';
+    document.getElementById('cr-deficit').textContent = '−' + deficit + ' kcal';
+    document.getElementById('cr-protein').textContent = protein + ' g/jour';
+    document.getElementById('cr-target').textContent = target;
+    document.getElementById('cal-result').style.display = 'block';
+  }
+
+  function addExerciseRow() {
+    exCount++;
+    const div = document.createElement('div');
+    div.className = 'exercise-entry';
+    div.id = 'ex-' + exCount;
+    div.innerHTML = `
+      <div class="ex-header">
+        <input type="text" placeholder="Nom de l'exercice (ex: Développé couché)" style="flex:1">
+        <button class="btn btn-sm btn-danger" onclick="this.closest('.exercise-entry').remove()" style="margin-left:8px">×</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">Séries (ex: 80×10)</div>
+      <div class="sets-grid" id="sets-${exCount}">
+        ${[1,2,3,4].map(i => `<input type="text" placeholder="Série ${i}: 80×10" style="font-size:12px;padding:5px 8px">`).join('')}
+      </div>
+      <button class="btn btn-sm" style="margin-top:8px;font-size:11px" onclick="addSet(${exCount})">+ Série</button>
+    `;
+    document.getElementById('exercises-list').appendChild(div);
+  }
+
+  function addSet(id) {
+    const grid = document.getElementById('sets-' + id);
+    const n = grid.children.length + 1;
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.placeholder = `Série ${n}: 80×10`;
+    inp.style.cssText = 'font-size:12px;padding:5px 8px';
+    grid.appendChild(inp);
+  }
+
+  function saveSession() {
+    const date = document.getElementById('tr-date').value;
+    const type = document.getElementById('tr-type').value;
+    const notes = document.getElementById('tr-notes').value;
+    if (!date) return;
+    const exercises = [];
+    document.querySelectorAll('.exercise-entry').forEach(entry => {
+      const name = entry.querySelector('input[type=text]').value;
+      if (!name) return;
+      const sets = Array.from(entry.querySelectorAll('.sets-grid input')).map(i => i.value).filter(v => v);
+      exercises.push({ name, sets });
+    });
+    sessionData.unshift({ date, type, notes, exercises, id: Date.now() });
+    save();
+    document.getElementById('tr-notes').value = '';
+    document.getElementById('exercises-list').innerHTML = '';
+    exCount = 0;
+    renderSessions();
+  }
+
+  function deleteSession(id) {
+    sessionData = sessionData.filter(s => s.id !== id); save(); renderSessions();
+  }
+
+  function renderSessions() {
+    const container = document.getElementById('session-log');
+    const empty = document.getElementById('session-empty');
+    if (!sessionData.length) { empty.style.display = 'block'; container.innerHTML = ''; return; }
+    empty.style.display = 'none';
+    const typeColor = { 'Push': 'badge-amber', 'Pull': 'badge-green', 'Hyrox': 'badge-red', 'Padel': 'badge-green', 'Cardio': 'badge-amber' };
+    container.innerHTML = sessionData.map(s => `
+      <div class="week-block">
+        <div class="week-block-header" onclick="toggleSession(${s.id})">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+            <span class="badge ${typeColor[s.type] || ''}">${s.type}</span>
+            <span style="font-size:14px;font-weight:500;white-space:nowrap">${formatDate(s.date)}</span>
+            ${s.notes ? `<span style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.notes.substring(0, 40)}${s.notes.length > 40 ? '...' : ''}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:8px">
+            <span style="font-size:12px;color:var(--text-secondary)">${s.exercises.length} ex.</span>
+            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteSession(${s.id})">×</button>
+          </div>
+        </div>
+        <div class="week-block-body" id="sess-body-${s.id}">
+          ${s.notes ? `<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;padding:8px;background:var(--bg-primary);border-radius:var(--radius-md);border:0.5px solid var(--border)">${s.notes}</div>` : ''}
+          ${s.exercises.map(ex => `
+            <div style="margin-bottom:12px">
+              <div style="font-size:13px;font-weight:500;margin-bottom:6px">${ex.name}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">${ex.sets.map((set, i) => `<span class="set-pill">S${i + 1}: ${set}</span>`).join('')}</div>
+            </div>
+          `).join('')}
+          ${!s.exercises.length ? `<div style="font-size:13px;color:var(--text-secondary)">Aucun exercice noté.</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toggleSession(id) {
+    document.getElementById('sess-body-' + id).classList.toggle('open');
+  }
+
+  // Dates par défaut
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('w-date').value = today;
+  document.getElementById('tr-date').value = today;
+
+  renderWeightLog();
+  renderSessions();
+</script>
+</body>
+</html>
